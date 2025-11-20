@@ -118,6 +118,21 @@ fn test_read_iptc_png() -> Result<(), image::ImageError> {
 }
 
 #[test]
+#[cfg(feature = "png")]
+fn test_read_iptc_end_png() -> Result<(), image::ImageError> {
+    const IPTC_PNG_PATH: &str = "tests/images/png/bugfixes/iptc_at_end.png";
+    let img_path = PathBuf::from_str(IPTC_PNG_PATH).unwrap();
+
+    let data = fs::read(img_path)?;
+    let mut png_decoder = PngDecoder::new(std::io::Cursor::new(data))?;
+
+    assert!(png_decoder.iptc_metadata()?.is_some());
+    assert!(png_decoder.xmp_metadata()?.is_some());
+    assert!(png_decoder.exif_metadata()?.is_none());
+    Ok(())
+}
+
+#[test]
 #[cfg(feature = "jpeg")]
 fn test_read_xmp_jpeg() -> Result<(), image::ImageError> {
     const IMG_PATH: &str = "tests/images/jpg/exif-xmp-metadata.jpg";
