@@ -181,6 +181,7 @@ impl<R: BufRead + Seek> ImageDecoder for PngDecoder<R> {
     }
 
     fn exif_metadata(&mut self) -> ImageResult<Option<Vec<u8>>> {
+        self.reader.read_all_metadata().map_err(ImageError::from_png)?;
         Ok(self
             .reader
             .info()
@@ -190,6 +191,7 @@ impl<R: BufRead + Seek> ImageDecoder for PngDecoder<R> {
     }
 
     fn xmp_metadata(&mut self) -> ImageResult<Option<Vec<u8>>> {
+        self.reader.read_all_metadata().map_err(ImageError::from_png)?;
         if let Some(mut itx_chunk) = self
             .reader
             .info()
@@ -208,6 +210,7 @@ impl<R: BufRead + Seek> ImageDecoder for PngDecoder<R> {
     }
 
     fn iptc_metadata(&mut self) -> ImageResult<Option<Vec<u8>>> {
+        self.reader.read_all_metadata().map_err(ImageError::from_png)?;
         if let Some(mut text_chunk) = self
             .reader
             .info()
