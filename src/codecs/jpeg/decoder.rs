@@ -81,6 +81,27 @@ impl<R: BufRead + Seek> JpegDecoder<R> {
     pub fn set_strict_mode(&mut self, strict_mode: bool) {
         self.strict_mode = strict_mode;
     }
+
+    /// Get the chroma subsampling factors of the image
+    pub fn chroma_subsampling(&self) -> ImageResult<Option<(u8, u8)>> {
+        let options = zune_core::options::DecoderOptions::default()
+            .set_strict_mode(self.strict_mode)
+            .set_max_width(usize::MAX)
+            .set_max_height(usize::MAX);
+        let mut decoder =
+            zune_jpeg::JpegDecoder::new_with_options(ZCursor::new(&self.input), options);
+        decoder.decode_headers().map_err(ImageError::from_jpeg)?;
+
+        let info = decoder.info().expect("headers were decoded");
+        let subsampling = match info.chroma_subsampling {
+            zune_jpeg::SampleRatios::HV => Some((2, 2)),
+            zune_jpeg::SampleRatios::H => Some((2, 1)),
+            zune_jpeg::SampleRatios::V => Some((1, 2)),
+            zune_jpeg::SampleRatios::None => Some((1, 1)),
+            zune_jpeg::SampleRatios::Generic(h, v) => Some((h as u8, v as u8)),
+        };
+        Ok(subsampling)
+    }
 }
 
 impl<R: BufRead + Seek> ImageDecoder for JpegDecoder<R> {
