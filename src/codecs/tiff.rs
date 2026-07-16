@@ -114,18 +114,20 @@ where
             (tiff::ColorType::Gray(1), Uint) => ColorType::L8,
             (tiff::ColorType::Gray(8), Uint) => ColorType::L8,
             (tiff::ColorType::Gray(16), Uint) => ColorType::L16,
-            (tiff::ColorType::Gray(32), IEEEFP) => ColorType::L32F,
+            (tiff::ColorType::Gray(16 | 32), IEEEFP) => ColorType::L32F,
             (tiff::ColorType::GrayA(8), Uint) => ColorType::La8,
             (tiff::ColorType::GrayA(16), Uint) => ColorType::La16,
+            (tiff::ColorType::GrayA(16 | 32), IEEEFP) => ColorType::La32F,
             (tiff::ColorType::RGB(8), Uint) => ColorType::Rgb8,
             (tiff::ColorType::RGB(16), Uint) => ColorType::Rgb16,
+            (tiff::ColorType::RGB(16 | 32), IEEEFP) => ColorType::Rgb32F,
             (tiff::ColorType::RGBA(8), Uint) => ColorType::Rgba8,
             (tiff::ColorType::RGBA(16), Uint) => ColorType::Rgba16,
+            (tiff::ColorType::RGBA(16 | 32), IEEEFP) => ColorType::Rgba32F,
             (tiff::ColorType::CMYK(8), Uint) => ColorType::Rgb8,
             (tiff::ColorType::CMYK(16), Uint) => ColorType::Rgb16,
-            (tiff::ColorType::RGB(32), IEEEFP) => ColorType::Rgb32F,
-            (tiff::ColorType::RGBA(32), IEEEFP) => ColorType::Rgba32F,
             (tiff::ColorType::YCbCr(8), Uint) => ColorType::Rgb8,
+
             _ => {
                 return Err(ImageError::Unsupported(
                     UnsupportedError::from_format_and_kind(
@@ -548,7 +550,11 @@ impl<R: BufRead + Seek> ImageDecoder for TiffDecoder<R> {
             DecodingResult::F64(v) => {
                 buf.copy_from_slice(bytemuck::cast_slice(v));
             }
-            DecodingResult::F16(_) => unreachable!(),
+            DecodingResult::F16(v) => {
+                for (out, f) in bytemuck::cast_slice_mut::<u8, f32>(buf).iter_mut().zip(v) {
+                    *out = f.to_f32();
+                }
+            }
         }
 
         let orientation = reader
